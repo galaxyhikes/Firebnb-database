@@ -1,0 +1,868 @@
+-- Table creation, total 11 tables created.
+
+CREATE TABLE Users ( 
+UserID  INT  AUTO_INCREMENT PRIMARY KEY,  		-- Unique identifier of users  
+Type_user VARCHAR(10) NOT NULL,          
+CHECK (Type_user IN ('Host', 'Guest', 'Both')),        -- Impose type_user column to only accept predefined values	
+Fname  VARCHAR(50) NOT NULL,  -- First Name of User 
+Lname   VARCHAR(50) NOT NULL, -- Last Name of User 
+Phone_num  VARCHAR(15) UNIQUE NOT NULL,  
+Email   VARCHAR(100) UNIQUE NOT NULL,   -- Email of User  
+Lang_spoken  VARCHAR(20),	-- First Language of User	 
+Country   VARCHAR(20) NOT NULL,		-- Part of the composite Residence 
+City   VARCHAR(20) NOT NULL, -- Part of the composite Residence 
+Verified_id_status VARCHAR(50), 		 -- Textual data like “Verified” and  “Not verified” 
+CHECK (Verified_id_status IN ('Verified', 'Not verified')) 
+); 
+
+CREATE TABLE Hosts ( 
+HostID  INT  PRIMARY KEY,   
+Host_status VARCHAR(20) DEFAULT 'Normal Host',	              
+CHECK (Host_status IN ('Normal Host', 'Superhost')), 
+Response_rate DECIMAL(4,2), 
+Cancellation_rate DECIMAL(4,2), 
+Verified_id_req VARCHAR(3),  
+CHECK (Verified_id_req IN ('Yes', 'No')), 
+Social_security_num VARCHAR(15) NOT NULL,		-- Hosts’ identifier for tax purposes 
+FOREIGN KEY  (HostID) REFERENCES Users (UserID) 	 	-- Host must be a user  
+); 
+
+  
+
+CREATE TABLE Loyaltyprogram ( 
+MembershipTier VARCHAR(50) PRIMARY KEY, 
+MembershipDescription VARCHAR(500) NOT NULL, 
+Discount DECIMAL(4,2) NOT NULL 			-- Discount rate according to membership tier 
+); 
+
+ 
+
+CREATE TABLE Guests ( 
+GuestID INT  PRIMARY KEY,   
+MembershipTier VARCHAR(50) NOT NULL, 
+Preferred_payment VARCHAR(50), 
+Checkin_time_pref TIME, 
+Top_country_to_visit VARCHAR(50),    		  -- Country guest wants to visit the most 
+FOREIGN KEY  (MembershipTier) REFERENCES Loyaltyprogram (MembershipTier), 
+FOREIGN KEY  (GuestID) REFERENCES Users (UserID) 
+); 
+
+   
+
+CREATE TABLE Property (  
+ListingID VARCHAR(10) PRIMARY KEY, 
+Location_country   VARCHAR(20) NOT NULL,            	-- Part of the composite Location 
+Location_city   VARCHAR(20) NOT NULL,                                        -- Part of the composite Location 
+Price_night DECIMAL(10,2) NOT NULL, 
+Maintenance_status VARCHAR(3), 
+CHECK (Maintenance_status IN ('Yes', 'No')),		-- Enforce status constraint   
+Min_stay INT DEFAULT 1,  
+Property_type VARCHAR(50) NOT NULL, 
+Pet_friendly BOOLEAN NOT NULL, 
+Max_guests INT NOT NULL 
+); 
+
+  
+
+CREATE TABLE Host_Property ( 
+HostID INT NOT NULL, 
+ListingID VARCHAR(10) NOT NULL, 
+PRIMARY KEY (HostID, ListingID), 
+FOREIGN KEY (HostID) REFERENCES Hosts (HostID), 
+FOREIGN KEY (ListingID) REFERENCES Property (ListingID) 
+); 
+
+  
+
+CREATE TABLE Amenities ( 
+AmenityID INT PRIMARY KEY AUTO_INCREMENT,  
+Description TEXT NOT NULL 
+); 
+
+  
+
+CREATE TABLE Property_Amenity ( 
+ListingID VARCHAR(10), 
+AmenityID INT, 
+Quantity INT, 
+PRIMARY KEY (ListingID, AmenityID ), 
+FOREIGN KEY (ListingID) REFERENCES Property (ListingID), 
+FOREIGN KEY (AmenityID) REFERENCES Amenities (AmenityID) 
+); 
+
+ 
+
+CREATE TABLE Bookings ( 
+BookingID VARCHAR(10) PRIMARY KEY, 
+ListingID VARCHAR(10) NOT NULL, 
+HostID INT NOT NULL ,  
+GuestID INT NOT NULL, 
+Checkin DATE NOT NULL, 
+Checkout DATE NOT NULL, 
+Total_amount DECIMAL(10, 2) NOT NULL, 
+Num_guests INT NOT NULL, 
+Booking_status VARCHAR(20), 	 
+CHECK (Booking_status IN ('Pending', 'Approved', 'Cancelled')), -- Enforce status constraints 
+Completion_status VARCHAR(20), 		 
+CHECK (Completion_status IN ('Completed', 'Upcoming')),	-- Enforce status constraints 
+FOREIGN KEY (ListingID)  REFERENCES Property (ListingID), 
+FOREIGN KEY  (GuestID) REFERENCES Guests(GuestID), 
+FOREIGN KEY (HostID) REFERENCES Hosts(HostID) 
+); 
+
+  
+
+CREATE TABLE Reviews ( 
+ReviewID INT PRIMARY KEY AUTO_INCREMENT,   -- Each review left by host/guest has a unique review ID 
+Review_UserID  INT,			 
+BookingID VARCHAR(10), 
+Review_Description TEXT,  
+Rating DECIMAL(2,1), 
+FOREIGN KEY (Review_UserID) REFERENCES Users (UserID), 
+ -- References either Guest or Host from Users table 
+FOREIGN KEY (BookingID) REFERENCES Bookings (BookingID) 
+); 
+
+  
+
+CREATE TABLE Payments ( 
+PaymentID INT AUTO_INCREMENT PRIMARY KEY,  
+BookingID VARCHAR(10) NOT NULL, 
+Payment_method VARCHAR(50) NOT NULL,   
+Amount_paid DECIMAL(10,2) NOT NULL,  
+Transaction_date DATETIME NOT NULL, 
+FOREIGN KEY (BookingID) REFERENCES Bookings (BookingID) 
+); 
+
+
+
+
+-- Data insertion for all 11 tables.
+
+INSERT INTO Users (Type_user, Fname, Lname, Phone_num, Email, Lang_spoken, Country, City, Verified_id_status)
+VALUES
+('Host', 'John', 'Doe', '555-1001', 'john.doe@example.com', 'English', 'United States', 'New York', 'Verified'),
+('Host', 'Jane', 'Smith', '555-1002', 'jane.smith@example.com', 'English', 'Canada', 'Toronto', 'Verified'),
+('Host', 'Carlos', 'Gomez', '555-1003', 'carlos.gomez@example.com', 'Spanish', 'Mexico', 'Cancun', 'Verified'),
+('Host', 'Emily', 'Johnson', '555-1004', 'emily.johnson@example.com', 'English', 'Canada', 'Vancouver', 'Verified'),
+('Host', 'Robert', 'Brown', '555-1005', 'robert.brown@example.com', 'English', 'United States', 'Los Angeles', 'Verified'),
+('Host', 'Linda', 'Martinez', '555-1006', 'linda.martinez@example.com', 'French', 'Canada', 'Montreal', 'Verified'),
+('Guest', 'Alice', 'Williams', '555-2001', 'alice.williams@example.com', 'English', 'Australia', 'Sydney', 'Not verified'),
+('Guest', 'David', 'Lee', '555-2002', 'david.lee@example.com', 'English', 'United Kingdom', 'London', 'Verified'),
+('Guest', 'Sophia', 'Moore', '555-2003', 'sophia.moore@example.com', 'German', 'Germany', 'Berlin', 'Not verified'),
+('Guest', 'Michael', 'Taylor', '555-2004', 'michael.taylor@example.com', 'English', 'New Zealand', 'Auckland', 'Verified'),
+('Guest', 'Isabella', 'Anderson', '555-2005', 'isabella.anderson@example.com', 'English', 'United States', 'Chicago', 'Not verified'),
+('Guest', 'James', 'Thomas', '555-2006', 'james.thomas@example.com', 'French', 'France', 'Arzon', 'Verified'),
+('Guest', 'Berly', 'Biju', '555-2087', 'berly.biju@example.com', 'Malayalam', 'France', 'Arzon', 'Verified');
+
+
+INSERT INTO Hosts (HostID, Host_status, Response_rate, Cancellation_rate, Verified_id_req, Social_security_num)
+VALUES
+(1, 'Superhost', 98.5, 2.0, 'Yes', 'SSN1001'),
+(2, 'Normal Host', 90.2, 5.1, 'Yes', 'SSN1002'),
+(3, 'Normal Host', 85.4, 4.2, 'No', 'SSN1003'),
+(4, 'Superhost', 96.7, 1.8, 'Yes', 'SSN1004'),
+(5, 'Normal Host', 88.3, 3.5, 'No', 'SSN1005'),
+(6, 'Normal Host', 92.1, 4.0, 'Yes', 'SSN1006');
+
+
+INSERT INTO Loyaltyprogram (MembershipTier, MembershipDescription, Discount)
+VALUES
+('Basic', 'Basic membership upon sign up. No perks available.', 0.00),
+('Bronze', 'Bronze tier achieved upon making at least 10 bookings within the year. 10% discount on bookings', 10.00),
+('Silver', 'Silver tier achieved upon making at least 15 bookings within the year. 15% discount on bookings', 15.00),
+('Gold', 'The most premium membership tier achieved upon making at least 25 bookings within the year. 20% discount on bookings', 20.00);
+
+
+INSERT INTO Guests (GuestID, MembershipTier, Preferred_payment, Checkin_time_pref, Top_country_to_visit)
+VALUES
+(7, 'Bronze', 'Visa', '14:00:00', 'Italy'),
+(8, 'Gold', 'Mastercard', '15:00:00', 'Japan'),
+(9, 'Silver', 'Paypal', '13:00:00', 'Australia'),
+(10, 'Basic', 'Visa', '12:00:00', 'New Zealand'),
+(11, 'Gold', 'Amex', '16:00:00', 'France'),
+(12, 'Bronze', 'Discover', '11:00:00', 'Norway'),
+(13, 'Basic', 'Discover', '12:00:00', 'France');
+
+
+INSERT INTO Property (ListingID, Location_country, Location_city, Price_night, Maintenance_status, Min_stay, Property_type, Pet_friendly, Max_guests)
+VALUES 
+('P001', 'USA', 'New York', 300.00, 'Yes', 2, 'Apartment', TRUE, 4),
+('P002', 'Canada', 'Toronto', 150.00, 'Yes', 3, 'Apartment', FALSE, 2),
+('P003', 'USA', 'Los Angeles', 400.00, 'No', 1, 'Villa', TRUE, 6),
+('P004', 'Canada', 'Vancouver', 200.00, 'Yes', 2, 'Apartment', TRUE, 3),
+('P005', 'USA', 'Chicago', 350.00, 'No', 1, 'Villa', FALSE, 5),
+('P006', 'Canada', 'Montreal', 250.00, 'Yes', 3, 'Apartment', TRUE, 4),
+('P007', 'USA', 'Miami', 500.00, 'Yes', 2, 'Villa', TRUE, 8),
+('P008', 'USA', 'Boston', 180.00, 'No', 1, 'Apartment', FALSE, 3),
+('P009', 'USA', 'San Francisco', 450.00, 'Yes', 2, 'Villa', TRUE, 7),
+('P010', 'Canada', 'Calgary', 100.00, 'No', 1, 'Apartment', FALSE, 2);
+
+
+INSERT INTO Host_Property (HostID, ListingID)
+VALUES 
+(1, 'P001'),
+(2, 'P002'),
+(3, 'P003'),
+(4, 'P004'),
+(5, 'P005'),
+(6, 'P006'),
+(1, 'P007'),  -- Host 1 manages more than one listing
+(2, 'P008'),  -- Host 2 manages more than one listing
+(3, 'P009'),  -- Host 3 manages more than one listing
+(4, 'P010');  -- Host 4 manages more than one listing
+
+
+INSERT INTO Amenities (Description)
+VALUES
+('Washing Machine'),
+('Swimming pool'),
+('Bed'),
+('Bathroom'),
+('Wifi');
+
+
+INSERT INTO Property_Amenity (ListingID, AmenityID, Quantity)
+VALUES 
+('P001', 1, 1),  -- Washing Machine
+('P001', 3, 2),  -- Bed
+('P001', 4, 1),  -- Bathroom
+
+('P002', 2, 1),  -- Pool
+('P002', 3, 1),  -- Bed
+('P002', 5, 1),  -- WiFi
+
+('P003', 1, 1),  -- Washing Machine
+('P003', 3, 3),  -- Bed
+('P003', 4, 2),  -- Bathroom
+
+('P004', 2, 1),  -- Pool
+('P004', 4, 1),  -- Bathroom
+('P004', 5, 1),  -- WiFi
+
+('P005', 1, 1),  -- Washing Machine
+('P005', 3, 2),  -- Bed
+('P005', 4, 2),  -- Bathroom
+
+('P006', 3, 2),  -- Bed
+('P006', 4, 1),  -- Bathroom
+('P006', 5, 1),  -- WiFi
+
+('P007', 1, 1),  -- Washing Machine
+('P007', 2, 1),  -- Pool
+('P007', 4, 3),  -- Bathroom
+
+('P008', 3, 1),  -- Bed
+('P008', 5, 1),  -- WiFi
+
+('P009', 1, 1),  -- Washing Machine
+('P009', 3, 2),  -- Bed
+('P009', 4, 2),  -- Bathroom
+
+('P010', 2, 1),  -- Pool
+('P010', 4, 1),  -- Bathroom
+('P010', 5, 1);  -- WiFi
+
+
+INSERT INTO Bookings (BookingID, ListingID, HostID, GuestID, Checkin, Checkout, Total_amount, Num_guests, Booking_status, Completion_status)
+VALUES 
+('B001', 'P001', 1, 7, '2024-07-01', '2024-07-07', 700.00, 2, 'Approved', 'Completed'),
+('B002', 'P002', 2, 8, '2024-07-05', '2024-07-10', 500.00, 1, 'Approved', 'Completed'),
+('B003', 'P003', 3, 9, '2024-07-12', '2024-07-15', 300.00, 4, 'Approved', 'Completed'),
+('B004', 'P001', 1, 10, '2024-07-18', '2024-07-22', 600.00, 3, 'Approved', 'Completed'),
+('B005', 'P004', 4, 11, '2024-07-20', '2024-07-25', 450.00, 2, 'Pending', 'Upcoming'),
+('B006', 'P005', 5, 12, '2024-07-26', '2024-07-30', 800.00, 1, 'Approved', 'Completed'),
+('B007', 'P006', 6, 7, '2024-08-01', '2024-08-05', 350.00, 2, 'Approved', 'Completed'),
+('B008', 'P002', 2, 9, '2024-08-03', '2024-08-07', 500.00, 3, 'Approved', 'Completed'),
+('B009', 'P003', 3, 10, '2024-08-08', '2024-08-12', 400.00, 1, 'Approved', 'Completed'),
+('B010', 'P001', 1, 11, '2024-08-10', '2024-08-14', 600.00, 4, 'Approved', 'Completed');
+
+
+INSERT INTO Reviews (ReviewID, Review_UserID, BookingID, Review_Description, Rating)
+VALUES 
+(1, 7, 'B001', 'Great experience, would stay again!', 4.5),
+(2, 1, 'B001', 'Guest was respectful and left the place clean.', 5.0),
+(3, 8, 'B002', 'Lovely apartment, very clean.', 4.0),
+(4, 2, 'B002', 'Guest was pleasant and easy to communicate with.', 4.5),
+(5, 9, 'B003', 'Spacious and comfortable.', 4.5),
+(6, 3, 'B003', 'Guest was friendly and left the place in great shape.', 4.5),
+(7, 10, 'B004', 'Amazing location!', 4.0),
+(8, 1, 'B004', 'Guest was great, would host again.', 5.0),
+(9, 11, 'B005', 'Excited for the upcoming stay.', 5.0),
+(10, 12, 'B006', 'Beautiful villa, highly recommend.', 4.5),
+(11, 5, 'B006', 'Guest was wonderful and took great care of the property.', 5.0),
+(12, 7, 'B007', 'Nice place, convenient location.', 4.0),
+(13, 6, 'B007', 'Guest was courteous and communicative.', 4.5),
+(14, 9, 'B008', 'Repeat visit, just as good as the first time.', 4.5),
+(15, 2, 'B008', 'Great guest, always welcome.', 5.0),
+(16, 10, 'B009', 'Enjoyed my stay, very comfortable.', 4.5),
+(17, 3, 'B009', 'Guest was polite and took good care of the space.', 4.5),
+(18, 11, 'B010', 'Fantastic place, will be back!', 5.0),
+(19, 1, 'B010', 'Guest left the property in excellent condition.', 5.0);
+
+
+INSERT INTO Payments (PaymentID, BookingID, Payment_method, Amount_paid, Transaction_date)
+VALUES 
+(1, 'B001', 'Visa', 300.00, '2024-07-01 14:00:00'),
+(2, 'B001', 'Visa', 400.00, '2024-07-05 14:00:00'),
+(3, 'B002', 'Mastercard', 500.00, '2024-07-05 15:00:00'),
+(4, 'B003', 'Amex', 300.00, '2024-07-12 14:00:00'),
+(5, 'B004', 'Visa', 600.00, '2024-07-18 13:00:00'),
+(6, 'B005', 'Paypal', 450.00, '2024-07-20 12:00:00'),
+(7, 'B006', 'Mastercard', 400.00, '2024-07-26 14:00:00'),
+(8, 'B006', 'Mastercard', 400.00, '2024-07-29 14:00:00'),
+(9, 'B007', 'Visa', 350.00, '2024-08-01 13:00:00'),
+(10, 'B008', 'Amex', 250.00, '2024-08-03 14:00:00'),
+(11, 'B008', 'Amex', 250.00, '2024-08-06 14:00:00'),
+(12, 'B009', 'Paypal', 400.00, '2024-08-08 12:00:00'),
+(13, 'B010', 'Visa', 600.00, '2024-08-10 13:00:00');
+
+
+
+
+-- Start of task requirements and their respective queries
+
+-- TASK 1: Average rating for hosts across all their hostings, displaying their first & last name in a single string, host status and average rating. Arrange the final output from highest to lowest rating
+
+-- Filter out bookings with ratings given by guests to hosts
+CREATE TEMPORARY TABLE br AS
+SELECT 
+    BookingID, 
+    Rating
+FROM 
+    Reviews 
+WHERE 
+    Review_UserID IN (
+  -- only filtering out reviews left by guests to calculate ratings for the hosts
+        SELECT GuestID
+        FROM Guests);
+
+SELECT 
+    CONCAT(u.Fname, " ", u.Lname) AS host_name, 
+    h.Host_status, 
+    AVG(br.Rating) AS avg_rating
+FROM 
+-- Query to fetch the hosts id for the relevant bookings by joining the temp table with bookings table
+    (br JOIN Bookings b ON br.BookingID=b.BookingID) JOIN 
+-- Query to fetch the host status from the host table, and combining that info with their details from users table
+    (Users u JOIN Hosts h ON u.UserID=h.HostID) ON u.UserID = b.HostID
+GROUP BY 
+    u.Fname, 
+    u.Lname, 
+    h.Host_status
+ORDER BY 
+    avg_rating DESC;
+
+
+
+-- Task 2: Average rating for guests given by hosts from their stays, displaying their first & last name in a single string, membership tier and average rating. Arrange the final output from highest to lowest rating
+
+-- Query to retrieve ratings given by hosts to guests that stayed with them
+CREATE TEMPORARY TABLE gr AS 
+SELECT 
+    BookingID, 
+    Rating
+FROM 
+    Reviews
+WHERE  
+    Review_UserID IN (
+        -- To filter out host id from hosts table to ensure that the ratings retrieved are left by hosts
+        SELECT HostID
+        FROM Hosts);
+
+SELECT 
+    CONCAT(u.Fname, " ", u.Lname) AS guest_name, 
+    g.MembershipTier, 
+    AVG(gr.Rating) AS avg_rating
+FROM 
+    -- To retrieve booking info of the bookings made in temp table gr
+    (gr JOIN Bookings b ON gr.BookingID=b.BookingID) JOIN 
+    -- To retrieve guest info by joining guest table with user table
+    (Users u JOIN Guests g ON u.UserID=g.GuestID) ON b.GuestID=g.GuestID
+GROUP BY 
+    u.Fname, 
+    u.Lname, 
+    g.MembershipTier
+ORDER BY 
+    avg_rating DESC;
+
+
+
+-- Task 3: Retrieve the bookings made by each guest, displaying their first and last name as a single string, membership tier and the number of bookings made in the respective countries and cities. Arrange output according to guests' first and last name
+
+-- Temporary table storing each guest's information
+CREATE TEMPORARY TABLE guest_info AS 
+SELECT 
+    u.Fname, 
+    u.Lname, 
+    g.MembershipTier, 
+    u.UserID
+FROM 
+    Users u JOIN Guests g ON u.UserID=g.GuestID
+WHERE UserID IN (
+    SELECT GuestID
+    FROM Bookings
+);
+
+-- Temporary table storing the number of bookings made by each guest in the respective countries and cities
+CREATE TEMPORARY TABLE guest_booking_info AS 
+SELECT 
+    b.GuestID, 
+    p.Location_country, 
+    p.Location_city, 
+    COUNT(*) AS num_bookings
+FROM 
+    Bookings b JOIN Property p ON b.ListingID=p.ListingID
+GROUP BY 
+    b.GuestID, 
+    p.Location_country, 
+    p.Location_city
+ORDER BY 
+    b.GuestID;
+
+SELECT 
+    CONCAT(gi.Fname, " ", gi.Lname) AS guest_name, 
+    gi.MembershipTier, 
+    gbi.Location_country, 
+    gbi.Location_city, 
+    gbi.num_bookings
+FROM 
+    guest_info gi JOIN guest_booking_info gbi ON 
+    gi.UserID=gbi.GuestID;
+
+
+
+-- Task 4: Generate an output containing information about bookings that were not paid in full in a single transaction. Display the guest's first name and last name in a single string, listing ID, booking ID, the number of instalments made and total amount for the respective bookings.
+
+-- Filter out the list of booking id that had payments done in instalments
+CREATE TEMPORARY TABLE instalments AS
+SELECT 
+    BookingID, 
+    COUNT(*) AS num_instalments
+FROM 
+    Payments
+GROUP BY 
+    BookingID
+HAVING 
+    num_instalments > 1;
+
+SELECT 
+    CONCAT(u.Fname, " ", u.Lname) AS name,
+    b.ListingID, 
+    i.BookingID, 
+    i.num_instalments,
+    b.Total_amount
+FROM 
+-- To combine tables from bookings and instalments to obtain listing info as well as guest id
+    (instalments i JOIN Bookings b ON i.BookingID=b.BookingID) JOIN 
+-- To retrieve guest's first name by joining with users table
+    Users u ON b.GuestID=u.UserID;
+
+
+
+-- Task 5: Depending on the membership tier, different levels of discounts is applied. The total transaction amount recorded reflects the bill post discount.  
+-- Retrieve the following information: generate output displaying each of the relevant booking id, listing id, dates of checkin and check out, the bill before discount, the actual bill and the discount applied.
+-- Do not include bookings without discounts. Arrange output according to the booking id in ascending order, and express the bill amounts in 2 decimals.
+
+SELECT 
+    b.BookingID, 
+    b.ListingID, 
+    b.Checkin,
+    b.Checkout,
+    -- Total_amount paid is post discount, thus necessary to calculate the actual price pre-discount with the use of discount rate
+    ROUND((b.Total_amount/(1-l.Discount/100)),2) AS bill_before_discount,
+    b.Total_amount AS actual_bill,
+    l.Discount
+FROM 
+    -- Retrieve the individual bookings for each respective guest
+    Bookings b JOIN 
+    -- Retrieve information about guests and their respective discount perks by joining guest and loyalty program tables
+    (Guests g JOIN Loyaltyprogram l ON g.MembershipTier=l.MembershipTier) ON 
+    b.GuestID=g.GuestID
+WHERE 
+-- Filter out bookings that do not have any discounts applied ie basic membership tier
+    l.Discount != 0
+ORDER BY 
+    BookingID ASC;
+
+
+
+-- TASK 6: Some properties listed by hosts may not be booked by guests. Retrieve information of these properties, showing the listing ID, its location (country and city), nightly rate, property type, the type and quantity of amenities provided. Order output by the listing id in ascending order.
+
+-- Filter out the listings that did not receive any bookings
+SELECT 
+    p.ListingID, 
+    p.Location_country, 
+    p.Location_city, 
+    p.Price_night, 
+    p.Property_type, 
+    a.Description, 
+    pa.Quantity
+FROM 
+    -- Combine property table information with the JOINed tables below to ensure each property has its relevant amentities listed
+    Property p JOIN 
+    -- Obtain the respective amenities information for each property
+    (Property_Amenity pa JOIN Amenities a ON pa.AmenityID=a.AmenityID) 
+    ON p.ListingID=pa.ListingID
+WHERE 
+    p.ListingID NOT IN (
+    -- List of listings that had bookings
+        SELECT ListingID
+        FROM Bookings
+        )
+ORDER BY 
+    ListingID ASC;
+
+
+
+-- Task 7: Among the list of bookings that have yet to receive any reservations, some might be under maintenance, which makes them unavailable for booking. Find the listings that have yet to receive any reservations and are not available for booking at the moment (ie under maintenance).
+
+-- Include listing id, location of property, nightly rate, its maintenance status, minimum length of stay required, property type, pet friendliness and the maximum number of guests allowable.
+Select p.*
+From Property p LEFT OUTER JOIN  Bookings b
+On p.ListingID=b.ListingID
+Where b.BookingID IS NULL and p.Maintenance_status="No";
+
+
+
+-- TASK 8: Not all bookings have reviews from both guests and hosts. For bookings that have reviews from both parties, retrieve their respective reviews. 
+-- Display the listing ids, guests' first and last name in a single string, guests' ratings, hosts' first and last name in a single string and hosts' ratings for the stay(s).
+
+-- Temporary table storing reviews given by guests
+CREATE TEMPORARY TABLE guest_rv AS
+SELECT 
+    u.Fname, 
+    u.Lname,
+    r.BookingID, 
+    r.Review_Description AS guest_review, 
+    r.Rating AS rating_from_guest
+FROM 
+-- JOINing reviews table with users table to retrieve guests' names 
+    Reviews r JOIN Users u ON 
+    r.Review_UserID=u.UserID
+WHERE 
+    r.BookingID IN (
+-- Select bookings with more than 1 review received ie 1 from guest, 1 from host
+        SELECT BookingID
+        FROM Reviews
+        GROUP BY BookingID
+        HAVING COUNT(*)>1
+    ) AND 
+    -- Guests have user ids from 7-12
+    r.Review_UserID BETWEEN 7 AND 12;
+
+-- Temporary table storing reviews by hosts
+CREATE TEMPORARY TABLE host_rv AS 
+SELECT 
+    u.Fname,
+    u.Lname,
+    r.BookingID, 
+    r.Review_Description AS host_review, 
+    r.Rating AS rating_from_host
+FROM 
+-- JOINing reviews table with users table to retrieve hosts' names 
+    Reviews r JOIN Users u ON r.Review_UserID=u.UserID
+WHERE 
+    r.BookingID IN (
+-- Select bookings with more than 1 review received ie 1 from guest, 1 from host
+        SELECT BookingID
+        FROM Reviews
+        GROUP BY BookingID
+        HAVING COUNT(*)>1
+    ) AND 
+    -- Hosts have IDs from 1-6
+    r.Review_UserID BETWEEN 1 AND 6;
+
+SELECT 
+    b.ListingID, 
+    CONCAT(gr.Fname, " ", gr.Lname) AS guest_name, 
+    gr.guest_review, 
+    gr.rating_from_guest, 
+    CONCAT(hr.Fname, " ", hr.Lname) AS host_name, 
+    hr.host_review, 
+    hr.rating_from_host
+FROM 
+    guest_rv gr, 
+    host_rv hr, 
+    Bookings b
+-- Conducting 2 JOINs here. First to obtain both guest and host reviews and ratings into a single table using the 2 temp tables created. Then to retrieve the listing ID by joining with bookings table.
+WHERE 
+    gr.BookingID=hr.BookingID AND 
+    b.BookingID=gr.BookingID;
+
+
+
+-- Task 9: Display the number of bookings made by guests for each host in the database. Display host's ID, first and last name, as well as number of bookings received. Arrange output according to number of bookings in descending order.
+
+SELECT 
+    H.HostID, 
+    U.Fname AS Host_First_Name, 
+    U.Lname AS Host_Last_Name, 
+    COUNT(B.BookingID) AS Number_of_Bookings
+FROM 
+    Hosts H
+JOIN 
+    Users U ON H.HostID = U.UserID
+JOIN 
+    Bookings B ON H.HostID = B.HostID
+GROUP BY 
+    H.HostID, U.Fname, U.Lname
+ORDER BY 
+    Number_of_Bookings DESC;
+
+
+
+-- TASK 10: Aside from just finding the overall number of bookings received by hosts across the bookings, it is also valuable to find out the number of bookings received by each host for each property listed on the platform. Thus, obtain the number of bookings received by each host, displaying host's first name, last name, host status, listing id(s) and the number of bookings received for each listing. Listings that did not receive any bookings should have number of bookings reflected as 0. Arrange the output according to number of bookings in descending order, followed by listing ID.
+
+-- Table tabulating the number of bookings received by each host and each respective listings
+CREATE TEMPORARY TABLE host_bookings AS
+SELECT 
+    hp.HostID, 
+    hp.ListingID, 
+    hb.num_bookings
+FROM 
+    Host_Property hp LEFT JOIN (
+        SELECT ListingID, HostID, COUNT(*) AS num_bookings
+        FROM Bookings
+        GROUP BY ListingID
+        ) hb ON hp.ListingID=hb.ListingID;
+
+CREATE TEMPORARY TABLE almost AS
+SELECT 
+    hb.ListingID, 
+    CONCAT(u.Fname, " ", u.Lname) AS host_name, 
+    h.Host_status, 
+    num_bookings
+FROM 
+-- JOINing hosts and users table to obtain host status and the respective names
+    (Users u JOIN Hosts h ON h.HostID=u.UserID) JOIN 
+    -- JOINing with the above temporary table host_bookings to generate a table with the desired information as stated in the task
+    host_bookings hb ON hb.HostID=u.UserID
+ORDER BY 
+    num_bookings DESC,
+    hb.ListingID;
+
+-- To input 0 for null values in num_bookings column
+UPDATE almost 
+SET num_bookings = 0
+WHERE num_bookings IS NULL;
+
+
+
+-- TASK 11: Multiple properties can be listed within a single country, and each property has its own average rating calculated across ratings given by guests. 
+-- Generate an output displaying each listing's ID, its location (country and city), nightly rate, average rating from guests that stayed, as well as the average rating across all the properties based in that country. Make sure to express ratings to 2 decimals, and arrange the final output according to the listing's country and city.
+-- Exclude properties that do not have any ratings in the output.
+
+CREATE TEMPORARY TABLE collated AS
+SELECT b.BookingID, b.ListingID, br.Rating
+FROM 
+    -- JOINing table retrieved from subquery with bookings table to obtain the listing id associated with each booking that received a rating. Aggregate function is not performed on rating yet to perform average on 2 levels - across reviews for the same listing, and across reviews for listings in the same country.
+    Bookings b JOIN (
+            -- Subqeury to retrieve table containing the booking ids and ratings received from guest reviews
+            SELECT 
+                BookingID, 
+                Rating
+            FROM 
+                Reviews 
+            WHERE 
+                Review_UserID IN (
+            -- only filtering out reviews left by guests to calculate ratings for the properties
+                    SELECT GuestID
+                    FROM Guests) 
+            ) br ON b.BookingID=br.BookingID;
+
+SELECT 
+    -- Ensure that only unique listing IDs are generated in output as the temp table would have contained multiple entries for certain listings as a result of multiple bookings
+    DISTINCT p.ListingID, 
+    p.Location_country, 
+    p.Location_city, 
+    p.Price_night,
+    -- Perform average rating calculation for each listing based on the ratings received 
+    ROUND(AVG(c.Rating) OVER(PARTITION BY p.ListingID),2) AS listing_avg_rating,
+    -- Perform average rating calculation for listings within each country
+    ROUND(AVG(c.Rating) OVER(PARTITION BY p.Location_country),2) AS country_avg
+FROM 
+    -- Perform JOIN function to retrieve information about each listing from the property table and combine that with the ratings received from guests
+    Property p JOIN 
+    collated c ON p.ListingID = c.ListingID
+ORDER BY 
+    p.Location_country, 
+    p.Location_city;
+
+
+
+-- Task 12: Guests stay at the properties of varying durations. Tabulate the frequency of each distinct duration of stay, and the average duration of stays across all bookings. Arrange the output according to the frequency, in a descending order.
+-- Query to tabulate the duration of stay and the number of times the specified duration was chosen in the bookings
+CREATE TEMPORARY TABLE duration_freq AS
+SELECT 
+    (Checkout-Checkin) AS duration_of_stay, 
+    COUNT(*) AS frequency
+FROM 
+    Bookings
+GROUP BY 
+    duration_of_stay;
+
+SELECT * 
+-- Perform cartesian join to reflect the average duration across all stays in all rows
+FROM duration_freq, (
+    -- Subqeury to calculate the duration duration across all stays
+    SELECT 
+        ROUND(SUM(duration_of_stay*frequency)/SUM(frequency),2) AS avg_duration_all_stays
+    FROM 
+        duration_freq) n
+ORDER BY 
+    frequency DESC;
+
+
+
+-- Task 13: Display the complete details of Hosts in current Database with the most number of listings. This helps in managing and checking performance on how well the 
+-- current system can handle hosts allowing bookings in many listings. Arrange output in the following order of columns: user id, type of user, first and last name, phone number, email, language spoken, residence (country, city), verified status, response and cancellation rates.
+
+Select u.*, h.Response_rate , h.Cancellation_rate
+From Hosts h, Host_Property hp, Property p, Users u
+where h.HostID=hp.HostID and p.ListingID=hp.ListingID and u.UserID=h.HostID
+group by h.HostID
+having count(*)=(
+    SELECT MAX(property_count) FROM (
+        SELECT COUNT(*) AS property_count
+        FROM Host_Property
+        GROUP BY HostID
+    ) AS subquery);
+
+
+
+-- Task 14: List the details of all of the pending bookings in the database, this information can be used to send alerts or reminders to both guests and hosts to confirm the statuses of bookings. Include the booking and listing id, host and guest id for the booking, check in and out dates, total amount, the number of guests staying, as well as the booking and completion status.
+
+Select b. *
+From Bookings b, Users u
+Where b.GuestID=u.UserID
+And b.Booking_status in ("Pending");
+
+
+
+-- Task 15: Evaluate the Total revenue generated for each host registered in the Database till date. Include just the host id and total revenue in the output.
+
+SELECT h.HostID, SUM(b.total_amount * DATEDIFF(b.Checkout, b.Checkin)) AS `Total Revenue`
+FROM Bookings b, Hosts h
+where h.HostID = b.HostID
+GROUP BY h.HostID;
+
+
+
+-- Task 16: Display the Guest details of Guests who have not left any reviews on existing listings.
+-- Guests who left no reviews for a listing
+
+Select u.*
+From Users u LEFT JOIN  Reviews r
+On u.UserID=r.Review_UserID
+Where r.ReviewID IS NULL
+and u.Type_user="Guest";
+
+
+
+-- Task 17: Find the most expensive property listed by each host. This helps us evaluate the current market trend of rent prices used currently in the existing database. Include the host id, listing id, location of the property, nightly rate, maintenance status, minimum stay duration, property type, pet friendliness and the maximum number of guests allowable.
+
+SELECT hp.HostID, p.*
+FROM Property p
+JOIN Host_Property hp ON p.ListingID = hp.ListingID
+JOIN (
+    SELECT hp2.HostID, MAX(p2.Price_night) AS MaxPrice
+    FROM Property p2
+    JOIN Host_Property hp2 ON p2.ListingID = hp2.ListingID
+    GROUP BY hp2.HostID
+) AS most_expensive
+ON hp.HostID = most_expensive.HostID AND p.Price_night = most_expensive.MaxPrice;
+
+
+
+-- Task 18: Count the total number of amenities for each Listing in database, this can help the company market the resulting query solution listings at a higher rate because of the total number of amenities in each listing. Include listing id, property type and the number of amenity types for each listing.
+SELECT p.ListingID, p.Property_type, COUNT(a.AmenityID) AS Total_Amenities
+FROM Property p
+JOIN Property_Amenity pa ON p.ListingID = pa.ListingID
+JOIN Amenities a ON pa.AmenityID = a.AmenityID
+GROUP BY p.ListingID, p.Property_type;
+
+
+
+-- Task 19: Calculate total number of guests in database that pay with their preferred payment method in the database.
+
+SELECT COUNT(*) AS Number_of_Guests_Using_Preferred_Payment
+FROM Guests g
+JOIN Bookings b ON g.GuestID = b.GuestID
+JOIN Payments p ON b.BookingID = p.BookingID
+WHERE g.Preferred_payment = p.Payment_method;
+
+
+-- Task 20: Calculate average price per guest for each completed booking in database, this data can help understand how much guests are willing to pay in the longterm while using this platform.
+
+SELECT 
+    b.BookingID,
+    b.Total_amount / b.Num_guests AS Avg_Price_Per_Guest
+FROM 
+    Bookings b;
+
+
+-- Task 21: Calculate maximum number of guests and number of guests who actually booked a listing, this data can help us verify if there exists any listing are not used at full potential by guests. 
+-- First we calculate average number of Additional Guests allowed and then also display additional guests allowed for each listing that was under-utilized.
+-- query 1
+SELECT 
+    AVG(p.Max_guests - b.Num_guests) AS Avg_Additional_Guests_Allowed
+FROM 
+    Bookings b
+JOIN 
+    Property p ON b.ListingID = p.ListingID
+WHERE 
+    b.Num_guests < p.Max_guests;
+
+-- query 2
+SELECT 
+    BookingID, 
+    Max_guests, 
+    Num_guests, 
+    (Max_guests - Num_guests) AS Additional_Guests_Allowed
+FROM 
+    (SELECT 
+        b.BookingID,
+        p.Max_guests,
+        b.Num_guests,
+        (p.Max_guests - b.Num_guests) AS Additional_Guests_Allowed
+     FROM 
+        Bookings b
+     JOIN 
+        Property p ON b.ListingID = p.ListingID
+     WHERE 
+        b.Num_guests < p.Max_guests) AS SubQuery;
+
+
+-- Task 22: Some bookings are under-utilised ie the number of guests that stayed at the property is below the maximum allowable capacity. Find the bookings that have allowance for more guests to stay, displaying booking id, the maximum allowable guests for each stay, the number of guests that actually stayed at the property and the additional guests allowable.
+
+SELECT 
+    BookingID, 
+    Max_guests, 
+    Num_guests, 
+    (Max_guests - Num_guests) AS Additional_Guests_Allowed
+FROM 
+    (SELECT 
+        b.BookingID,
+        p.Max_guests,
+        b.Num_guests,
+        (p.Max_guests - b.Num_guests) AS Additional_Guests_Allowed
+     FROM 
+        Bookings b
+     JOIN 
+        Property p ON b.ListingID = p.ListingID
+     WHERE 
+        b.Num_guests < p.Max_guests) AS SubQuery;
+
+
+
+-- Task 23: Some hosts require guests to have their identities verified prior to making a booking. List all guests who are currently unverified in the database, and may be potentially declined for further bookings.
+
+SELECT UserID, Fname, Lname
+FROM Users
+WHERE Verified_id_status = 'Not verified' 
+AND UserID IN (
+    SELECT UserID
+    FROM Users
+    WHERE Type_user='Guest'
+);
